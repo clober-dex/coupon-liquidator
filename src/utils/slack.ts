@@ -1,6 +1,6 @@
 export async function sendSlackMessage(
   type: 'info' | 'debug',
-  message: any,
+  rows: string[],
   title?: string,
 ) {
   if (type === 'info' && !process.env.SLACK_INFO_WEBHOOK_URL) {
@@ -22,8 +22,8 @@ export async function sendSlackMessage(
     },
     body: JSON.stringify({
       text: title
-        ? title + '\n```\n' + JSON.stringify(message, null, 2) + '\n```'
-        : '```\n' + JSON.stringify(message, null, 2) + '\n```',
+        ? title + '\n```\n' + rows.join('\n') + '\n```'
+        : '```\n' + rows.join('\n') + '\n```',
     }),
   })
 }

@@ -42,40 +42,55 @@ const debug = async ({
   }
   await sendSlackMessage(
     'debug',
-    assets.map((asset) => ({
-      symbol: asset.underlying.symbol,
-      price: formatUnits(
-        prices[asset.underlying.address].value,
-        prices[asset.underlying.address].decimals,
-      ),
-    })),
+    assets.map(
+      (asset) =>
+        `${asset.underlying.symbol.padStart(6)}: $${formatUnits(
+          prices[asset.underlying.address].value,
+          prices[asset.underlying.address].decimals,
+        )}`,
+    ),
     'PRICES:',
   )
+
   await sendSlackMessage(
     'debug',
-    topRiskyPositions.map((position) => ({
-      position: position.id.toString(),
-      ltv: `${position.ltv.toFixed(2)}%`,
-      debt: `${formatUnits(
-        position.amount,
-        position.underlying.decimals,
-        prices[position.underlying.address],
-      )} ${position.underlying.symbol}`,
-      collateral: `${formatUnits(
-        position.collateralAmount,
-        position.collateral.underlying.decimals,
-        prices[position.collateral.underlying.address],
-      )} ${position.collateral.underlying.symbol}`,
-    })),
+    topRiskyPositions.map(
+      (position) =>
+        `${position.user.toLowerCase()} debt ratio: ${position.ltv
+          .toFixed(2)
+          .padStart(6)}% loan: ${formatUnits(
+          position.amount,
+          position.underlying.decimals,
+          prices[position.underlying.address],
+        ).padStart(8)} ${position.underlying.symbol} collateral: ${formatUnits(
+          position.collateralAmount,
+          position.collateral.underlying.decimals,
+          prices[position.collateral.underlying.address],
+        ).padStart(8)} ${
+          position.collateral.underlying.symbol
+        } (liq. price $${position.liquidationPrice.toFixed(4).padStart(8)})`,
+    ),
     `TOP ${topRiskyPositions.length} RISKY POSITIONS:`,
   )
+
   await sendSlackMessage(
     'debug',
-    topBorrowedPositions.map((position) => ({
-      position: position.id.toString(),
-      ltv: `${position.ltv.toFixed(2)}%`,
-      debtUSDAmount: `$${position.debtUSDAmount.toFixed(2)}`,
-    })),
+    topBorrowedPositions.map(
+      (position) =>
+        `${position.user.toLowerCase()} debt ratio: ${position.ltv
+          .toFixed(2)
+          .padStart(6)}% loan: ${formatUnits(
+          position.amount,
+          position.underlying.decimals,
+          prices[position.underlying.address],
+        ).padStart(8)} ${position.underlying.symbol} collateral: ${formatUnits(
+          position.collateralAmount,
+          position.collateral.underlying.decimals,
+          prices[position.collateral.underlying.address],
+        ).padStart(8)} ${
+          position.collateral.underlying.symbol
+        } (liq. price $${position.liquidationPrice.toFixed(4).padStart(8)})`,
+    ),
     `TOP ${topBorrowedPositions.length} BORROWED POSITIONS:`,
   )
 }
@@ -83,13 +98,7 @@ const debug = async ({
 const main = async () => {
   if (!assets) {
     assets = await fetchAssets()
-    await sendSlackMessage('debug', {
-      message: 'BOT STARTED',
-      time: `${new Date().toLocaleString()} ${new Date().getMilliseconds()}`,
-      account: walletClient.account.address,
-      chain: chain.id,
-      assets: assets.map((asset) => asset.underlying.symbol),
-    })
+    await sendSlackMessage('debug', ['BOT STARTED'])
     await approveMax(
       publicClient,
       walletClient,
