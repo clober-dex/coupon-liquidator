@@ -4,6 +4,7 @@ import { Epoch } from './epoch'
 
 export type LoanPosition = {
   id: bigint
+  user: `0x${string}`
   substitute: Currency
   underlying: Currency
   collateral: Collateral
@@ -14,6 +15,7 @@ export type LoanPosition = {
   toEpoch: Epoch
   isOverLTVThreshold: boolean
   ltv: number
+  liquidationPrice: number
 }
 
 export async function classifyPositionByLTV(

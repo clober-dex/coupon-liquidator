@@ -2,7 +2,7 @@ import { Currency } from '../model/currency'
 import { Collateral } from '../model/collateral'
 
 import { LIQUIDATION_TARGET_LTV_PRECISION } from './bigint'
-import { BigDecimal, dollarValue } from './numbers'
+import { BigDecimal, dollarValue, formatUnits } from './numbers'
 
 export function calculateIsOverLTVThreshold(
   debtAmount: bigint,
@@ -46,6 +46,21 @@ export function calculateCurrentLTV(
         collateralPrice,
       ),
     )
+    .div(collateral.liquidationThreshold.toString())
+    .toNumber()
+}
+
+export function calculateLiquidationPrice(
+  debtAmount: bigint,
+  debtPrice: BigDecimal,
+  debt: Currency,
+  collateralAmount: bigint,
+  collateralPrice: BigDecimal,
+  collateral: Collateral,
+): number {
+  return dollarValue(debtAmount, debt.decimals, debtPrice)
+    .times(LIQUIDATION_TARGET_LTV_PRECISION.toString())
+    .div(formatUnits(collateralAmount, collateral.underlying.decimals))
     .div(collateral.liquidationThreshold.toString())
     .toNumber()
 }
