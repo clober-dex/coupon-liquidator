@@ -1,8 +1,8 @@
 {
   "name": "coupon-liquidator",
   "module": "src/index.ts",
-  "type": "module",
   "devDependencies": {
+    "@graphprotocol/client-cli": "^3.0.0",
     "@typescript-eslint/eslint-plugin": "^6.6.0",
     "@typescript-eslint/parser": "^6.6.0",
     "bun-types": "latest",
@@ -15,5 +15,13 @@
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
+  },
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "build-graph": "graphclient build"
+  },
+  "dependencies": {
+    "bignumber.js": "^9.1.2",
+    "viem": "^1.10.9"
   }
 }

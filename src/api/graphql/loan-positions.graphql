@@ -1,0 +1,41 @@
+query getLoanPositions {
+  loanPositions {
+    id
+    user
+    amount
+    substitute {
+      id
+      decimals
+      name
+      symbol
+    }
+    underlying {
+      id
+      decimals
+      name
+      symbol
+    }
+    collateral {
+      substitute {
+        id
+        decimals
+        name
+        symbol
+      }
+      underlying {
+        id
+        decimals
+        name
+        symbol
+      }
+      liquidationThreshold
+      liquidationTargetLtv
+    }
+    collateralAmount
+    toEpoch {
+      id
+      startTimestamp
+      endTimestamp
+    }
+  }
+}

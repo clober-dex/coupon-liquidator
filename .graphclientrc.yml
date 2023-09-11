@@ -1,0 +1,12 @@
+sources:
+  - name: coupon-finance
+    handler:
+      graphql:
+        endpoint: '{context.url:https://dev-subgraph.coupon.finance/subgraphs/name/coupon-subgraph}'
+
+documents:
+  - ./src/api/**/*.graphql
+
+
+codegen:
+  contextType: 'MeshContext & { url: string }'

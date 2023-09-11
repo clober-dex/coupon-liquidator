@@ -1,0 +1,32 @@
+query getAssets {
+  assets {
+    underlying {
+      id
+      symbol
+      name
+      decimals
+    }
+    substitutes {
+      id
+      symbol
+      name
+      decimals
+    }
+    collaterals {
+      underlying {
+        id
+        symbol
+        name
+        decimals
+      }
+      substitute {
+        id
+        symbol
+        name
+        decimals
+      }
+      liquidationThreshold
+      liquidationTargetLtv
+    }
+  }
+}
