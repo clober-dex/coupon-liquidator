@@ -66,7 +66,7 @@ const config: HardhatConfig = {
       companionNetworks: {},
     },
     [7777]: {
-      url: 'http://dev-rpc.coupon.finance',
+      url: 'https://dev-rpc.coupon.finance',
       chainId: 7777,
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
