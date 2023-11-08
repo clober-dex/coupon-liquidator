@@ -33,6 +33,6 @@ export const CONTRACT_ADDRESSES: {
     LoanPositionLiquidateHelper:
       '0x0000000000000000000000000000000000000001' as `0x${string}`,
     CouponLiquidator:
-      '0x0000000000000000000000000000000000000000' as `0x${string}`,
+      '0x8EAEDF34bd1fcbb5A81CAD76FA2B3DFEF616a317' as `0x${string}`,
   },
 }[CHAIN_ID]
