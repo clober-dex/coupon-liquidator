@@ -1,12 +1,12 @@
 import { maxUint256, PublicClient, WalletClient } from 'viem'
 
-import { Asset } from '../model/asset'
 import { LoanPosition } from '../model/loan-position'
 import { fetchAmountOutByOdos, fetchCallDataByOdos } from '../api/odos'
 
 import { CONTRACT_ADDRESSES } from './addresses'
 import { chain } from './chain'
 import { SLIPPAGE } from './slippage'
+import { sendSlackMessage } from './slack'
 
 const LOAN_POSITION_MANAGER_ABI = [
   {
@@ -80,7 +80,6 @@ const LIQUIDATOR_ABI = [
 export async function liquidate(
   publicClient: PublicClient,
   walletClient: WalletClient,
-  assets: Asset[],
   positions: LoanPosition[],
 ) {
   if (!walletClient.account) {
@@ -97,7 +96,6 @@ export async function liquidate(
       })),
     })) as { result: readonly [bigint, bigint, bigint] }[]
   ).map(({ result }) => (result?.[0] as bigint) ?? 0n)
-  const swapDataList: `0x${string}`[] = []
   for (let i = 0; i < positions.length; i++) {
     const position = positions[i]
     const liquidationAmount = liquidationAmounts[i]
@@ -108,27 +106,20 @@ export async function liquidate(
       tokenOut: position.underlying.address,
       slippageLimitPercent: SLIPPAGE,
       userAddress: walletClient.account.address,
-      gasPrice: gasPrice,
+      gasPrice,
     })
     const swapData = await fetchCallDataByOdos({
       pathId,
       userAddress: walletClient.account.address,
     })
-    swapDataList.push(swapData)
+    const hash = await walletClient.writeContract({
+      chain,
+      address: CONTRACT_ADDRESSES.CouponLiquidator,
+      abi: LIQUIDATOR_ABI,
+      functionName: 'liquidate',
+      args: [position.id, liquidationAmount, swapData],
+      account: walletClient.account,
+    })
+    await sendSlackMessage('info', [hash], 'LIQUIDATE_SUCCEEDED:')
   }
-  const liquidationResults = (
-    (await publicClient.multicall({
-      contracts: positions.map((position, i) => {
-        const liquidationAmount = liquidationAmounts[i]
-        const swapData = swapDataList[i]
-        return {
-          address: CONTRACT_ADDRESSES.LoanPositionManager,
-          abi: LIQUIDATOR_ABI,
-          functionName: 'liquidate',
-          args: [position.id, liquidationAmount, swapData],
-        }
-      }),
-    })) as { result: `0x${string}` }[]
-  ).map(({ result }) => result)
-  console.log(liquidationResults)
 }
