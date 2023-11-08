@@ -68,7 +68,7 @@ setInterval(
     main()
       .then()
       .catch(async (e) => {
-        await sendSlackMessage('debug', e.toString())
+        await sendSlackMessage('debug', [e.toString()])
       }),
   5000,
 )
