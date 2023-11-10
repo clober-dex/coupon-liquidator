@@ -59,8 +59,9 @@ const main = async () => {
     topBorrowedPositions,
     prices,
   })
-
-  await liquidate(publicClient, walletClient, assets, unSafePositions)
+  if (unSafePositions.length > 0) {
+    await liquidate(publicClient, walletClient, unSafePositions)
+  }
 }
 
 setInterval(
@@ -68,7 +69,7 @@ setInterval(
     main()
       .then()
       .catch(async (e) => {
-        await sendSlackMessage('debug', e.toString())
+        await sendSlackMessage('debug', [e.toString()])
       }),
   5000,
 )

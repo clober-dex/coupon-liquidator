@@ -1,12 +1,14 @@
-import { PublicClient, WalletClient } from 'viem'
+import { maxUint256, PublicClient, WalletClient } from 'viem'
 
-import { Asset } from '../model/asset'
 import { LoanPosition } from '../model/loan-position'
+import { fetchAmountOutByOdos, fetchCallDataByOdos } from '../api/odos'
 
 import { CONTRACT_ADDRESSES } from './addresses'
-import { fetchBalances } from './balance'
+import { chain } from './chain'
+import { SLIPPAGE } from './slippage'
+import { sendSlackMessage } from './slack'
 
-const _abi = [
+const LOAN_POSITION_MANAGER_ABI = [
   {
     inputs: [
       {
@@ -41,6 +43,9 @@ const _abi = [
     stateMutability: 'view',
     type: 'function',
   },
+] as const
+
+const LIQUIDATOR_ABI = [
   {
     inputs: [
       {
@@ -53,23 +58,18 @@ const _abi = [
         name: 'maxRepayAmount',
         type: 'uint256',
       },
+      {
+        internalType: 'bytes',
+        name: 'swapData',
+        type: 'bytes',
+      },
     ],
     name: 'liquidate',
     outputs: [
       {
-        internalType: 'uint256',
-        name: 'liquidationAmount',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint256',
-        name: 'repayAmount',
-        type: 'uint256',
-      },
-      {
-        internalType: 'uint256',
-        name: 'protocolFeeAmount',
-        type: 'uint256',
+        internalType: 'bytes',
+        name: 'result',
+        type: 'bytes',
       },
     ],
     stateMutability: 'nonpayable',
@@ -80,39 +80,46 @@ const _abi = [
 export async function liquidate(
   publicClient: PublicClient,
   walletClient: WalletClient,
-  assets: Asset[],
   positions: LoanPosition[],
 ) {
   if (!walletClient.account) {
     throw new Error('Wallet client is not connected')
   }
-  const balances = await fetchBalances(
-    publicClient,
-    walletClient.account.address,
-    assets,
-  )
-  const results = await publicClient.multicall({
-    contracts: positions.map((position) => ({
-      address: CONTRACT_ADDRESSES.LoanPositionManager,
-      abi: _abi,
-      functionName: 'getLiquidationStatus',
-      args: [
-        position.id,
-        balances[position.collateral.underlying.address] ?? 0n,
-      ],
-    })),
-  })
-  const data = results.reduce(
-    (acc, { result }, i) => ({
-      ...acc,
-      [positions[i].id.toString()]: {
-        position: positions[i],
-        liquidationAmount: result?.[0] ?? 0n,
-        repayAmount: result?.[1] ?? 0n,
-        protocolFeeAmount: result?.[2] ?? 0n,
-      },
-    }),
-    {},
-  )
-  console.log('data', data)
+  const gasPrice = Number(await publicClient.getGasPrice())
+  const liquidationAmounts = (
+    (await publicClient.multicall({
+      contracts: positions.map((position) => ({
+        address: CONTRACT_ADDRESSES.LoanPositionManager,
+        abi: LOAN_POSITION_MANAGER_ABI,
+        functionName: 'getLiquidationStatus',
+        args: [position.id, maxUint256],
+      })),
+    })) as { result: readonly [bigint, bigint, bigint] }[]
+  ).map(({ result }) => (result?.[0] as bigint) ?? 0n)
+  for (let i = 0; i < positions.length; i++) {
+    const position = positions[i]
+    const liquidationAmount = liquidationAmounts[i]
+    const { pathId } = await fetchAmountOutByOdos({
+      chainId: chain.id,
+      amountIn: liquidationAmount.toString(),
+      tokenIn: position.collateral.underlying.address,
+      tokenOut: position.underlying.address,
+      slippageLimitPercent: SLIPPAGE,
+      userAddress: walletClient.account.address,
+      gasPrice,
+    })
+    const swapData = await fetchCallDataByOdos({
+      pathId,
+      userAddress: walletClient.account.address,
+    })
+    const hash = await walletClient.writeContract({
+      chain,
+      address: CONTRACT_ADDRESSES.CouponLiquidator,
+      abi: LIQUIDATOR_ABI,
+      functionName: 'liquidate',
+      args: [position.id, liquidationAmount, swapData],
+      account: walletClient.account,
+    })
+    await sendSlackMessage('info', [hash], 'LIQUIDATE_SUCCEEDED:')
+  }
 }
