@@ -31,12 +31,6 @@ const main = async () => {
   if (!assets) {
     assets = await fetchAssets()
     await sendSlackMessage('debug', ['BOT STARTED'])
-    await approveMax(
-      publicClient,
-      walletClient,
-      assets,
-      CONTRACT_ADDRESSES.LoanPositionLiquidateHelper,
-    )
   }
   const rank = Number(process.env.RANK || '5')
   const { loanPositions: positions, prices } = await fetchLoanPositions(
