@@ -51,9 +51,7 @@ export const debug = async ({
             position.collateralAmount,
             position.collateral.underlying.decimals,
             prices[position.collateral.underlying.address],
-          ).padStart(8)} ${
-            position.collateral.underlying.symbol
-          } (liq. price $${position.liquidationPrice.toFixed(4).padStart(8)})`,
+          ).padStart(8)} ${position.collateral.underlying.symbol}`,
       ),
     ],
     `TOP ${topRiskyPositions.length} RISKY POSITIONS:`,
@@ -77,9 +75,7 @@ export const debug = async ({
             position.collateralAmount,
             position.collateral.underlying.decimals,
             prices[position.collateral.underlying.address],
-          ).padStart(8)} ${
-            position.collateral.underlying.symbol
-          } (liq. price $${position.liquidationPrice.toFixed(4).padStart(8)})`,
+          ).padStart(8)} ${position.collateral.underlying.symbol}`,
       ),
     ],
     `TOP ${topBorrowedPositions.length} BORROWED POSITIONS:`,

@@ -3,11 +3,7 @@ import { getAddress, PublicClient } from 'viem'
 import { LoanPosition } from '../model/loan-position'
 import { getBuiltGraphSDK } from '../../.graphclient'
 import { Asset } from '../model/asset'
-import {
-  calculateCurrentLTV,
-  calculateIsOverLTVThreshold,
-  calculateLiquidationPrice,
-} from '../utils/ltv'
+import { calculateCurrentLTV, calculateIsOverLTVThreshold } from '../utils/ltv'
 import { fetchPrices } from '../utils/price'
 import { BigDecimal, dollarValue } from '../utils/numbers'
 
@@ -73,14 +69,6 @@ export async function fetchLoanPositions(
           position.collateral,
         ),
         ltv: calculateCurrentLTV(
-          position.amount,
-          prices[position.underlying.address],
-          position.underlying,
-          position.collateralAmount,
-          prices[position.collateral.underlying.address],
-          position.collateral,
-        ),
-        liquidationPrice: calculateLiquidationPrice(
           position.amount,
           prices[position.underlying.address],
           position.underlying,
