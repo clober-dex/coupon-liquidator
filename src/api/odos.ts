@@ -2,9 +2,10 @@ export async function fetchOdosApi<T>(
   path: string,
   options?: RequestInit,
 ): Promise<T> {
+  // TODO: fix endpoint in prod
   const endpoint = process.env.PUBLIC_ODOS_API_BASE_URL
     ? `${process.env.PUBLIC_ODOS_API_BASE_URL}/${path}`
-    : `/api/mock/${path}`
+    : `https://www.coupon.finance/api/mock/${path}`
   const response = await fetch(endpoint, options)
 
   if (response.ok) {
