@@ -7,6 +7,7 @@ import { CONTRACT_ADDRESSES } from './addresses'
 import { chain } from './chain'
 import { sendSlackMessage } from './slack'
 import { SLIPPAGE } from './slippage'
+import { formatUnits } from './numbers'
 
 const LOAN_POSITION_MANAGER_ABI = [
   {
@@ -103,7 +104,7 @@ export async function liquidate(
   for (let i = 0; i < positions.length; i++) {
     const position = positions[i]
     const liquidationAmount = liquidationAmounts[i]
-    const { pathId } = await fetchAmountOutByOdos({
+    const { pathId, amountOut: repayAmount } = await fetchAmountOutByOdos({
       chainId: chain.id,
       amountIn: liquidationAmount.toString(),
       tokenIn: position.collateral.underlying.address,
@@ -116,20 +117,50 @@ export async function liquidate(
       pathId,
       userAddress: walletClient.account.address,
     })
-    const hash = await walletClient.writeContract({
-      chain,
-      address: CONTRACT_ADDRESSES.CouponLiquidator,
-      abi: LIQUIDATOR_ABI,
-      functionName: 'liquidate',
-      args: [
-        position.id,
-        liquidationAmount,
-        swapData,
-        maxUint256,
-        walletClient.account.address,
-      ],
-      account: walletClient.account,
-    })
-    await sendSlackMessage('info', [hash], 'LIQUIDATE_SUCCEEDED:')
+    try {
+      const hash = await walletClient.writeContract({
+        chain,
+        address: CONTRACT_ADDRESSES.CouponLiquidator,
+        abi: LIQUIDATOR_ABI,
+        functionName: 'liquidate',
+        args: [
+          position.id,
+          liquidationAmount,
+          swapData,
+          maxUint256,
+          walletClient.account.address,
+        ],
+        account: walletClient.account,
+      })
+      await sendSlackMessage(
+        'info',
+        [
+          `TX: ${
+            walletClient.chain?.blockExplorers?.default.url ||
+            'https://arbiscan.io'
+          }/tx/${hash}`,
+          `  account: ${position.user}`,
+          `  collateral amount: ${formatUnits(
+            position.collateralAmount,
+            position.collateral.underlying.decimals,
+          )} ${position.collateral.underlying.symbol}`,
+          `  debt amount: ${formatUnits(
+            position.amount,
+            position.underlying.decimals,
+          )} ${position.underlying.symbol}`,
+          `  liquidation amount: ${formatUnits(
+            liquidationAmount,
+            position.collateral.underlying.decimals,
+          )} ${position.collateral.underlying.symbol}`,
+          `  repay amount: ${formatUnits(
+            repayAmount,
+            position.underlying.decimals,
+          )} ${position.underlying.symbol}`,
+        ],
+        'LIQUIDATE_SUCCEEDED:',
+      )
+    } catch (e: any) {
+      await sendSlackMessage('info', [e.toString()], 'LIQUIDATE_FAILED:')
+    }
   }
 }
