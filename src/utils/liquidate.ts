@@ -5,8 +5,8 @@ import { fetchAmountOutByOdos, fetchCallDataByOdos } from '../api/odos'
 
 import { CONTRACT_ADDRESSES } from './addresses'
 import { chain } from './chain'
-import { SLIPPAGE } from './slippage'
 import { sendSlackMessage } from './slack'
+import { SLIPPAGE } from './slippage'
 
 const LOAN_POSITION_MANAGER_ABI = [
   {
@@ -55,7 +55,7 @@ const LIQUIDATOR_ABI = [
       },
       {
         internalType: 'uint256',
-        name: 'maxRepayAmount',
+        name: 'swapAmount',
         type: 'uint256',
       },
       {
@@ -63,15 +63,19 @@ const LIQUIDATOR_ABI = [
         name: 'swapData',
         type: 'bytes',
       },
-    ],
-    name: 'liquidate',
-    outputs: [
       {
-        internalType: 'bytes',
-        name: 'result',
-        type: 'bytes',
+        internalType: 'uint256',
+        name: 'maxRepayAmount',
+        type: 'uint256',
+      },
+      {
+        internalType: 'address',
+        name: 'feeRecipient',
+        type: 'address',
       },
     ],
+    name: 'liquidate',
+    outputs: [],
     stateMutability: 'nonpayable',
     type: 'function',
   },
@@ -95,7 +99,7 @@ export async function liquidate(
         args: [position.id, maxUint256],
       })),
     })) as { result: readonly [bigint, bigint, bigint] }[]
-  ).map(({ result }) => (result?.[0] as bigint) ?? 0n)
+  ).map(({ result }) => ((result?.[0] - result?.[2]) as bigint) ?? 0n)
   for (let i = 0; i < positions.length; i++) {
     const position = positions[i]
     const liquidationAmount = liquidationAmounts[i]
@@ -117,7 +121,13 @@ export async function liquidate(
       address: CONTRACT_ADDRESSES.CouponLiquidator,
       abi: LIQUIDATOR_ABI,
       functionName: 'liquidate',
-      args: [position.id, liquidationAmount, swapData],
+      args: [
+        position.id,
+        liquidationAmount,
+        swapData,
+        maxUint256,
+        walletClient.account.address,
+      ],
       account: walletClient.account,
     })
     await sendSlackMessage('info', [hash], 'LIQUIDATE_SUCCEEDED:')
