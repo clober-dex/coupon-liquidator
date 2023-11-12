@@ -22,10 +22,10 @@ export const CONTRACT_ADDRESSES: {
       '0x0000000000000000000000000000000000000000' as `0x${string}`,
   },
   [7777]: {
-    CouponOracle: '0xbaF0FF012884917b1FCb2222d6e6D75Eb795D23B' as `0x${string}`,
+    CouponOracle: '0x8B0f27aDf87E037B53eF1AADB96bE629Be37CeA8' as `0x${string}`,
     LoanPositionManager:
-      '0xa87224d1F96cA183CE119f94b6e48035c93B05Fb' as `0x${string}`,
+      '0xA0D476c6A39beA239749C566a02343e5584Ec200' as `0x${string}`,
     CouponLiquidator:
-      '0x8EAEDF34bd1fcbb5A81CAD76FA2B3DFEF616a317' as `0x${string}`,
+      '0xB3bf6df1E1fF1e4E57587d18a8537c958CE6439c' as `0x${string}`,
   },
 }[CHAIN_ID]
