@@ -100,14 +100,15 @@ export async function liquidate(
   for (let i = 0; i < positions.length; i++) {
     const position = positions[i]
     const liquidationAmount = liquidationAmounts[i]
+    const liquidationAmountWithSlippage = min(
+      BigInt(
+        Math.floor(Number(liquidationAmount) * (1 + SLIPPAGE_PERCENT / 100)),
+      ),
+      position.collateralAmount,
+    )
     const { pathId, amountOut: repayAmount } = await fetchAmountOutByOdos({
       chainId: chain.id,
-      amountIn: min(
-        BigInt(
-          Math.floor(Number(liquidationAmount) * (1 + SLIPPAGE_PERCENT / 100)),
-        ),
-        position.collateralAmount,
-      ).toString(),
+      amountIn: liquidationAmountWithSlippage.toString(),
       tokenIn: position.collateral.underlying.address,
       tokenOut: position.underlying.address,
       slippageLimitPercent: SLIPPAGE_PERCENT,
@@ -126,7 +127,7 @@ export async function liquidate(
         functionName: 'liquidate',
         args: [
           position.id,
-          liquidationAmount,
+          liquidationAmountWithSlippage,
           swapData,
           walletClient.account.address,
         ],
@@ -149,7 +150,7 @@ export async function liquidate(
             position.underlying.decimals,
           )} ${position.underlying.symbol}`,
           `  liquidation amount: ${formatUnits(
-            liquidationAmount,
+            liquidationAmountWithSlippage,
             position.collateral.underlying.decimals,
           )} ${position.collateral.underlying.symbol}`,
           `  repay amount: ${formatUnits(
