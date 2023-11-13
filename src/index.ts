@@ -54,7 +54,7 @@ const main = async () => {
   })
   if (unSafePositions.length > 0) {
     await liquidate(publicClient, walletClient, unSafePositions)
-    await sleep(1000 * 30)
+    await sleep(1000 * 60)
   }
 }
 
