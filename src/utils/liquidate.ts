@@ -103,7 +103,9 @@ export async function liquidate(
     const { pathId, amountOut: repayAmount } = await fetchAmountOutByOdos({
       chainId: chain.id,
       amountIn: min(
-        BigInt(Number(liquidationAmount) * (1 + SLIPPAGE_PERCENT / 100)),
+        BigInt(
+          Math.floor(Number(liquidationAmount) * (1 + SLIPPAGE_PERCENT / 100)),
+        ),
         position.collateralAmount,
       ).toString(),
       tokenIn: position.collateral.underlying.address,
