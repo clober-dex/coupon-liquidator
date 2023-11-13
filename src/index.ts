@@ -8,6 +8,7 @@ import { chain } from './utils/chain'
 import { classifyPositionByLTV } from './model/loan-position'
 import { fetchLoanPositions } from './api/loan-position'
 import { liquidate } from './utils/liquidate'
+import { sleep } from './utils/sleep'
 
 let assets: Asset[] | null = null
 
@@ -53,6 +54,7 @@ const main = async () => {
   })
   if (unSafePositions.length > 0) {
     await liquidate(publicClient, walletClient, unSafePositions)
+    await sleep(1000 * 30)
   }
 }
 
