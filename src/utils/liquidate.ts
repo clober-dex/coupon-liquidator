@@ -87,7 +87,7 @@ export async function liquidate(
     throw new Error('Wallet client is not connected')
   }
   const gasPrice = Number(await publicClient.getGasPrice())
-  const liquidationAmountAndProtocolFees = (
+  const liquidationAmounts = (
     (await publicClient.multicall({
       contracts: positions.map((position) => ({
         address: CONTRACT_ADDRESSES.LoanPositionManager,
@@ -96,18 +96,11 @@ export async function liquidate(
         args: [position.id, maxUint256],
       })),
     })) as { result: readonly [bigint, bigint, bigint] }[]
-  ).map(({ result }) => [
-    ((result?.[0] - result?.[2]) as bigint) ?? 0n,
-    result?.[2] ?? 0n,
-  ])
+  ).map(({ result }) => ((result?.[0] - result?.[2]) as bigint) ?? 0n)
   for (let i = 0; i < positions.length; i++) {
     const position = positions[i]
-    const [liquidationAmount, protocolFee] = liquidationAmountAndProtocolFees[i]
-    const liquidationAmountWithSlippage = min(
-      BigInt(
-        Math.floor(Number(liquidationAmount) * (1 + SLIPPAGE_PERCENT / 100)),
-      ),
-      position.collateralAmount - protocolFee,
+    const liquidationAmountWithSlippage = BigInt(
+      Math.floor(Number(liquidationAmounts[i]) * (1 - SLIPPAGE_PERCENT / 100)),
     )
     const { pathId, amountOut: repayAmount } = await fetchAmountOutByOdos({
       chainId: chain.id,
