@@ -15,7 +15,6 @@ export type LoanPosition = {
   toEpoch: Epoch
   isOverLTVThreshold: boolean
   ltv: number
-  liquidationPrice: number
 }
 
 export async function classifyPositionByLTV(

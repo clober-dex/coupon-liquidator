@@ -5,8 +5,9 @@ import { fetchAmountOutByOdos, fetchCallDataByOdos } from '../api/odos'
 
 import { CONTRACT_ADDRESSES } from './addresses'
 import { chain } from './chain'
-import { SLIPPAGE } from './slippage'
 import { sendSlackMessage } from './slack'
+import { SLIPPAGE } from './slippage'
+import { formatUnits } from './numbers'
 
 const LOAN_POSITION_MANAGER_ABI = [
   {
@@ -55,7 +56,7 @@ const LIQUIDATOR_ABI = [
       },
       {
         internalType: 'uint256',
-        name: 'maxRepayAmount',
+        name: 'swapAmount',
         type: 'uint256',
       },
       {
@@ -63,15 +64,14 @@ const LIQUIDATOR_ABI = [
         name: 'swapData',
         type: 'bytes',
       },
-    ],
-    name: 'liquidate',
-    outputs: [
       {
-        internalType: 'bytes',
-        name: 'result',
-        type: 'bytes',
+        internalType: 'address',
+        name: 'feeRecipient',
+        type: 'address',
       },
     ],
+    name: 'liquidate',
+    outputs: [],
     stateMutability: 'nonpayable',
     type: 'function',
   },
@@ -95,11 +95,11 @@ export async function liquidate(
         args: [position.id, maxUint256],
       })),
     })) as { result: readonly [bigint, bigint, bigint] }[]
-  ).map(({ result }) => (result?.[0] as bigint) ?? 0n)
+  ).map(({ result }) => ((result?.[0] - result?.[2]) as bigint) ?? 0n)
   for (let i = 0; i < positions.length; i++) {
     const position = positions[i]
     const liquidationAmount = liquidationAmounts[i]
-    const { pathId } = await fetchAmountOutByOdos({
+    const { pathId, amountOut: repayAmount } = await fetchAmountOutByOdos({
       chainId: chain.id,
       amountIn: liquidationAmount.toString(),
       tokenIn: position.collateral.underlying.address,
@@ -112,14 +112,49 @@ export async function liquidate(
       pathId,
       userAddress: walletClient.account.address,
     })
-    const hash = await walletClient.writeContract({
-      chain,
-      address: CONTRACT_ADDRESSES.CouponLiquidator,
-      abi: LIQUIDATOR_ABI,
-      functionName: 'liquidate',
-      args: [position.id, liquidationAmount, swapData],
-      account: walletClient.account,
-    })
-    await sendSlackMessage('info', [hash], 'LIQUIDATE_SUCCEEDED:')
+    try {
+      const hash = await walletClient.writeContract({
+        chain,
+        address: CONTRACT_ADDRESSES.CouponLiquidator,
+        abi: LIQUIDATOR_ABI,
+        functionName: 'liquidate',
+        args: [
+          position.id,
+          liquidationAmount,
+          swapData,
+          walletClient.account.address,
+        ],
+        account: walletClient.account,
+      })
+      await sendSlackMessage(
+        'info',
+        [
+          `TX: ${
+            walletClient.chain?.blockExplorers?.default.url ||
+            'https://arbiscan.io'
+          }/tx/${hash}`,
+          `  account: ${position.user}`,
+          `  collateral amount: ${formatUnits(
+            position.collateralAmount,
+            position.collateral.underlying.decimals,
+          )} ${position.collateral.underlying.symbol}`,
+          `  debt amount: ${formatUnits(
+            position.amount,
+            position.underlying.decimals,
+          )} ${position.underlying.symbol}`,
+          `  liquidation amount: ${formatUnits(
+            liquidationAmount,
+            position.collateral.underlying.decimals,
+          )} ${position.collateral.underlying.symbol}`,
+          `  repay amount: ${formatUnits(
+            repayAmount,
+            position.underlying.decimals,
+          )} ${position.underlying.symbol}`,
+        ],
+        'LIQUIDATE_SUCCEEDED:',
+      )
+    } catch (e: any) {
+      await sendSlackMessage('info', [e.toString()], 'LIQUIDATE_FAILED:')
+    }
   }
 }

@@ -49,18 +49,3 @@ export function calculateCurrentLTV(
     .div(collateral.liquidationThreshold.toString())
     .toNumber()
 }
-
-export function calculateLiquidationPrice(
-  debtAmount: bigint,
-  debtPrice: BigDecimal,
-  debt: Currency,
-  collateralAmount: bigint,
-  collateralPrice: BigDecimal,
-  collateral: Collateral,
-): number {
-  return dollarValue(debtAmount, debt.decimals, debtPrice)
-    .times(LIQUIDATION_TARGET_LTV_PRECISION.toString())
-    .div(formatUnits(collateralAmount, collateral.underlying.decimals))
-    .div(collateral.liquidationThreshold.toString())
-    .toNumber()
-}

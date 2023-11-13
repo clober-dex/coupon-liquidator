@@ -7,9 +7,8 @@ import { debug, sendSlackMessage } from './utils/slack'
 import { chain } from './utils/chain'
 import { classifyPositionByLTV } from './model/loan-position'
 import { fetchLoanPositions } from './api/loan-position'
-import { approveMax } from './utils/approve'
-import { CONTRACT_ADDRESSES } from './utils/addresses'
 import { liquidate } from './utils/liquidate'
+import { sleep } from './utils/sleep'
 
 let assets: Asset[] | null = null
 
@@ -30,7 +29,7 @@ const [publicClient, walletClient] = [
 const main = async () => {
   if (!assets) {
     assets = await fetchAssets()
-    await sendSlackMessage('debug', ['BOT STARTED'])
+    await sendSlackMessage('info', ['BOT STARTED'])
   }
   const rank = Number(process.env.RANK || '5')
   const { loanPositions: positions, prices } = await fetchLoanPositions(
@@ -55,6 +54,7 @@ const main = async () => {
   })
   if (unSafePositions.length > 0) {
     await liquidate(publicClient, walletClient, unSafePositions)
+    await sleep(1000 * 60)
   }
 }
 
@@ -65,5 +65,5 @@ setInterval(
       .catch(async (e) => {
         await sendSlackMessage('debug', [e.toString()])
       }),
-  5000,
+  10 * 1000,
 )
