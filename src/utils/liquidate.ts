@@ -6,8 +6,9 @@ import { fetchAmountOutByOdos, fetchCallDataByOdos } from '../api/odos'
 import { CONTRACT_ADDRESSES } from './addresses'
 import { chain } from './chain'
 import { sendSlackMessage } from './slack'
-import { SLIPPAGE } from './slippage'
+import { SLIPPAGE_PERCENT } from './slippage'
 import { formatUnits } from './numbers'
+import { min } from './bigint'
 
 const LOAN_POSITION_MANAGER_ABI = [
   {
@@ -101,10 +102,13 @@ export async function liquidate(
     const liquidationAmount = liquidationAmounts[i]
     const { pathId, amountOut: repayAmount } = await fetchAmountOutByOdos({
       chainId: chain.id,
-      amountIn: liquidationAmount.toString(),
+      amountIn: min(
+        BigInt(Number(liquidationAmount) * (1 + SLIPPAGE_PERCENT / 100)),
+        position.collateralAmount,
+      ).toString(),
       tokenIn: position.collateral.underlying.address,
       tokenOut: position.underlying.address,
-      slippageLimitPercent: SLIPPAGE,
+      slippageLimitPercent: SLIPPAGE_PERCENT,
       userAddress: walletClient.account.address,
       gasPrice,
     })
