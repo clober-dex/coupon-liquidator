@@ -26,6 +26,6 @@ export const CONTRACT_ADDRESSES: {
     LoanPositionManager:
       '0xA0D476c6A39beA239749C566a02343e5584Ec200' as `0x${string}`,
     CouponLiquidator:
-      '0xB3bf6df1E1fF1e4E57587d18a8537c958CE6439c' as `0x${string}`,
+      '0x9fd2e135C2f9401fCaBEDFD13dA439C91B96C95d' as `0x${string}`,
   },
 }[CHAIN_ID]

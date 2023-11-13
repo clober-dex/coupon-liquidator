@@ -65,11 +65,6 @@ const LIQUIDATOR_ABI = [
         type: 'bytes',
       },
       {
-        internalType: 'uint256',
-        name: 'maxRepayAmount',
-        type: 'uint256',
-      },
-      {
         internalType: 'address',
         name: 'feeRecipient',
         type: 'address',
@@ -127,7 +122,6 @@ export async function liquidate(
           position.id,
           liquidationAmount,
           swapData,
-          maxUint256,
           walletClient.account.address,
         ],
         account: walletClient.account,
