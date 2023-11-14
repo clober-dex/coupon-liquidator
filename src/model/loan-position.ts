@@ -33,10 +33,13 @@ export async function classifyPositionByLTV(
       .sort((a, b) => Number(b.debtUSDAmount) - Number(a.debtUSDAmount))
       .slice(0, rank),
     overLTVPositions: positions.filter(
-      (loanPosition) => loanPosition.isOverLTVThreshold,
+      (loanPosition) =>
+        loanPosition.isOverLTVThreshold && loanPosition.amount > 0n,
     ),
     expiredPositions: positions.filter(
-      (loanPosition) => loanPosition.toEpoch.endTimestamp < currentTimestamp,
+      (loanPosition) =>
+        loanPosition.toEpoch.endTimestamp < currentTimestamp &&
+        loanPosition.amount > 0n,
     ),
   }
 }
