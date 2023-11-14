@@ -9,20 +9,25 @@ import { classifyPositionByLTV } from './model/loan-position'
 import { fetchLoanPositions } from './api/loan-position'
 import { liquidate } from './utils/liquidate'
 import { sleep } from './utils/sleep'
+import { TIMEOUT } from './utils/constants'
 
 let assets: Asset[] | null = null
 
 const [publicClient, walletClient] = [
   createPublicClient({
     chain,
-    transport: http(),
+    transport: http(undefined, {
+      timeout: TIMEOUT,
+    }),
   }),
   createWalletClient({
     account: privateKeyToAccount(
       (process.env.PRIVATE_KEY || '0x') as `0x${string}`,
     ),
     chain,
-    transport: http(),
+    transport: http(undefined, {
+      timeout: TIMEOUT,
+    }),
   }),
 ]
 
@@ -58,12 +63,16 @@ const main = async () => {
   }
 }
 
-setInterval(
-  () =>
-    main()
-      .then()
-      .catch(async (e) => {
-        await sendSlackMessage('debug', [e.toString()])
-      }),
-  10 * 1000,
-)
+const run = async () => {
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    try {
+      await main()
+    } catch (e: any) {
+      await sendSlackMessage('debug', [e.toString()])
+    }
+    await sleep(10 * 1000)
+  }
+}
+
+run()

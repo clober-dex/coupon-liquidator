@@ -8,7 +8,6 @@ import { chain } from './chain'
 import { sendSlackMessage } from './slack'
 import { SLIPPAGE_PERCENT } from './slippage'
 import { formatUnits } from './numbers'
-import { min } from './bigint'
 
 const LOAN_POSITION_MANAGER_ABI = [
   {
