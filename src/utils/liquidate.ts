@@ -8,6 +8,7 @@ import { chain } from './chain'
 import { sendSlackMessage } from './slack'
 import { SLIPPAGE_PERCENT } from './slippage'
 import { formatUnits } from './numbers'
+import { fetchBalances } from './balance'
 
 const LOAN_POSITION_MANAGER_ABI = [
   {
@@ -86,7 +87,7 @@ export async function liquidate(
     throw new Error('Wallet client is not connected')
   }
   const gasPrice = Number(await publicClient.getGasPrice())
-  const liquidationAmounts = (
+  const liquidationAmountAndRepayAmounts = (
     (await publicClient.multicall({
       contracts: positions.map((position) => ({
         address: CONTRACT_ADDRESSES.LoanPositionManager,
@@ -95,13 +96,18 @@ export async function liquidate(
         args: [position.id, maxUint256],
       })),
     })) as { result: readonly [bigint, bigint, bigint] }[]
-  ).map(({ result }) => ((result?.[0] - result?.[2]) as bigint) ?? 0n)
+  ).map(({ result }) => [
+    ((result?.[0] - result?.[2]) as bigint) ?? 0n,
+    (result?.[1] as bigint) ?? 0n,
+  ])
   for (let i = 0; i < positions.length; i++) {
     const position = positions[i]
+    const liquidationAmount = liquidationAmountAndRepayAmounts[i][0]
+    const repayAmount = liquidationAmountAndRepayAmounts[i][1]
     const liquidationAmountWithSlippage = BigInt(
-      Math.floor(Number(liquidationAmounts[i]) * (1 - SLIPPAGE_PERCENT / 100)),
+      Math.floor(Number(liquidationAmount) * (1 - SLIPPAGE_PERCENT / 100)),
     )
-    const { pathId, amountOut: repayAmount } = await fetchAmountOutByOdos({
+    const { pathId } = await fetchAmountOutByOdos({
       chainId: chain.id,
       amountIn: liquidationAmountWithSlippage.toString(),
       tokenIn: position.collateral.underlying.address,
@@ -114,6 +120,11 @@ export async function liquidate(
       pathId,
       userAddress: walletClient.account.address,
     })
+    const balancesBefore = await fetchBalances(
+      publicClient,
+      walletClient.account.address,
+      [position.underlying.address, position.collateral.underlying.address],
+    )
     try {
       const hash = await walletClient.writeContract({
         chain,
@@ -128,6 +139,11 @@ export async function liquidate(
         ],
         account: walletClient.account,
       })
+      const balancesAfter = await fetchBalances(
+        publicClient,
+        walletClient.account.address,
+        [position.underlying.address, position.collateral.underlying.address],
+      )
       await sendSlackMessage(
         'info',
         [
@@ -152,6 +168,15 @@ export async function liquidate(
             repayAmount,
             position.underlying.decimals,
           )} ${position.underlying.symbol}`,
+          `  earned amount: ${formatUnits(
+            balancesAfter[position.underlying.address] -
+              balancesBefore[position.underlying.address],
+            position.underlying.decimals,
+          )} ${position.underlying.symbol} & ${formatUnits(
+            balancesAfter[position.collateral.underlying.address] -
+              balancesBefore[position.collateral.underlying.address],
+            position.collateral.underlying.decimals,
+          )} ${position.collateral.underlying.symbol}`,
         ],
         'LIQUIDATE_SUCCEEDED:',
       )
