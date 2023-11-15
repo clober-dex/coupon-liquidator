@@ -10,11 +10,11 @@ export const CONTRACT_ADDRESSES: {
   CouponLiquidator: `0x${string}`
 } = {
   [42161]: {
-    CouponOracle: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+    CouponOracle: '0xF8e9ab02b057978c29Ca57c7E086D46983764A13' as `0x${string}`,
     LoanPositionManager:
-      '0x0000000000000000000000000000000000000000' as `0x${string}`,
+      '0x03d65411684ae7B5440E11a6063881a774C733dF' as `0x${string}`,
     CouponLiquidator:
-      '0x0000000000000000000000000000000000000000' as `0x${string}`,
+      '0xEc916b3556BEB8a45A513e0DDEA75eC59A4FF49C' as `0x${string}`,
   },
   [421613]: {
     CouponOracle: '0x0000000000000000000000000000000000000000' as `0x${string}`,
