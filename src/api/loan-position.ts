@@ -7,7 +7,7 @@ import { calculateCurrentLTV, calculateIsOverLTVThreshold } from '../utils/ltv'
 import { fetchPrices } from '../utils/price'
 import { BigDecimal, dollarValue } from '../utils/numbers'
 
-import { toCurrency } from './asset'
+import { fetchCurrencies, toCurrency } from './asset'
 
 const { getLoanPositions } = getBuiltGraphSDK()
 
@@ -18,6 +18,7 @@ export async function fetchLoanPositions(
   loanPositions: LoanPosition[]
   prices: { [address: `0x${string}`]: BigDecimal }
 }> {
+  const currencies = fetchCurrencies(assets)
   const [{ loanPositions }, prices] = await Promise.all([
     getLoanPositions(
       {},
@@ -27,7 +28,7 @@ export async function fetchLoanPositions(
     ),
     fetchPrices(
       publicClient,
-      assets.map((asset) => asset.underlying.address),
+      currencies.map((currency) => currency.address),
     ),
   ])
 
