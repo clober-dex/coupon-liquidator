@@ -2,6 +2,7 @@ import { getAddress } from 'viem'
 
 import { getBuiltGraphSDK, Token } from '../../.graphclient'
 import { Asset } from '../model/asset'
+import { Currency } from '../model/currency'
 
 const { getAssets } = getBuiltGraphSDK()
 
@@ -34,4 +35,26 @@ export async function fetchAssets(): Promise<Asset[]> {
   }))
 
   return result
+}
+
+export function fetchCurrencies(assets: Asset[]) {
+  return Object.values<Currency>(
+    assets
+      .reduce(
+        (acc: Currency[], asset) => [
+          ...acc,
+          asset.underlying,
+          ...asset.substitutes.map((substitute) => substitute),
+          ...asset.collaterals.map((collateral) => collateral.underlying),
+          ...asset.collaterals.map((collateral) => collateral.substitute),
+        ],
+        [],
+      )
+      .reduce((acc: { [key in `0x${string}`]: Currency }, currency) => {
+        return {
+          ...acc,
+          [currency.address]: currency,
+        }
+      }, {}),
+  )
 }
