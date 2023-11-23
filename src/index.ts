@@ -1,4 +1,9 @@
-import { createPublicClient, createWalletClient, http } from 'viem'
+import {
+  createPublicClient,
+  createWalletClient,
+  http,
+  isAddressEqual,
+} from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 
 import { fetchAssets } from './api/asset'
@@ -50,7 +55,17 @@ const main = async () => {
   const unSafePositions = [...overLTVPositions, ...expiredPositions]
 
   await debug({
-    assets,
+    currencies: [
+      ...assets.map((asset) => asset.underlying),
+      ...assets
+        .map((asset) => asset.collaterals)
+        .flat()
+        .map((collateral) => collateral.underlying),
+    ].filter(
+      (currency, index, self) =>
+        self.findIndex((c) => isAddressEqual(c.address, currency.address)) ===
+        index,
+    ),
     positions,
     unSafePositions,
     topRiskyPositions,

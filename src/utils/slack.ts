@@ -1,33 +1,30 @@
 import { LoanPosition } from '../model/loan-position'
-import { Asset } from '../model/asset'
+import { Currency } from '../model/currency'
 
 import { BigDecimal, formatUnits } from './numbers'
 
 export const debug = async ({
-  assets,
+  currencies,
   positions,
   unSafePositions,
   topRiskyPositions,
   topBorrowedPositions,
   prices,
 }: {
-  assets: Asset[]
+  currencies: Currency[]
   positions: LoanPosition[]
   unSafePositions: LoanPosition[]
   topRiskyPositions: LoanPosition[]
   topBorrowedPositions: LoanPosition[]
   prices: { [address: string]: BigDecimal }
 }) => {
-  if (!assets) {
-    return
-  }
   await sendSlackMessage(
     'debug',
-    assets.map(
-      (asset) =>
-        `${asset.underlying.symbol.padStart(6)}: $${formatUnits(
-          prices[asset.underlying.address].value,
-          prices[asset.underlying.address].decimals,
+    currencies.map(
+      (currency) =>
+        `${currency.symbol.padStart(6)}: $${formatUnits(
+          prices[currency.address].value,
+          prices[currency.address].decimals,
         )}`,
     ),
     'PRICES:',
