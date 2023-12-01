@@ -39,7 +39,9 @@ const [publicClient, walletClient] = [
 const main = async () => {
   if (!assets) {
     assets = await fetchAssets()
-    await sendSlackMessage('info', ['BOT STARTED'])
+    await sendSlackMessage('info', [
+      `BOT STARTED: ${walletClient.account.address}`,
+    ])
   }
   const rank = Number(process.env.RANK || '5')
   const { loanPositions: positions, prices } = await fetchLoanPositions(
