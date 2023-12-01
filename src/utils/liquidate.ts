@@ -113,12 +113,12 @@ export async function liquidate(
       tokenIn: position.collateral.underlying.address,
       tokenOut: position.underlying.address,
       slippageLimitPercent: SLIPPAGE_PERCENT,
-      userAddress: walletClient.account.address,
+      userAddress: CONTRACT_ADDRESSES.CouponLiquidator,
       gasPrice,
     })
     const swapData = await fetchCallDataByOdos({
       pathId,
-      userAddress: walletClient.account.address,
+      userAddress: CONTRACT_ADDRESSES.CouponLiquidator,
     })
     const balancesBefore = await fetchBalances(
       publicClient,
