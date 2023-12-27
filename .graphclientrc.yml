@@ -4,9 +4,7 @@ sources:
       graphql:
         endpoint: '{context.url:https://dev-subgraph.coupon.finance/subgraphs/name/coupon-subgraph}'
     transforms:
-      - autoPagination:
-          validateSchema: true
-          limitOfRecords: 100000
+      - autoPagination: {}
 
 documents:
   - ./src/api/**/*.graphql
