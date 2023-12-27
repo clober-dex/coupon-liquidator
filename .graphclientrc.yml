@@ -3,6 +3,10 @@ sources:
     handler:
       graphql:
         endpoint: '{context.url:https://dev-subgraph.coupon.finance/subgraphs/name/coupon-subgraph}'
+    transforms:
+      - autoPagination:
+          validateSchema: true
+          limitOfRecords: 100000000
 
 documents:
   - ./src/api/**/*.graphql
