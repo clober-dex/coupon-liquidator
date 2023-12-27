@@ -48,7 +48,11 @@ export const debug = async ({
             position.collateralAmount,
             position.collateral.underlying.decimals,
             prices[position.collateral.underlying.address],
-          ).padStart(8)} ${position.collateral.underlying.symbol}`,
+          ).padStart(8)} ${
+            position.collateral.underlying.symbol
+          } expiration: ${new Date(
+            position.toEpoch.endTimestamp * 1000,
+          ).toLocaleString()}`,
       ),
     ],
     `TOP ${topRiskyPositions.length} RISKY POSITIONS:`,
