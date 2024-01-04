@@ -2,7 +2,7 @@ import { getAddress } from 'viem'
 
 import { ChainID } from './chain'
 
-const CHAIN_ID: ChainID = Number(process.env.CHAIN_ID) as ChainID
+export const CHAIN_ID: ChainID = Number(process.env.CHAIN_ID) as ChainID
 
 export const CONTRACT_ADDRESSES: {
   CouponOracle: `0x${string}`

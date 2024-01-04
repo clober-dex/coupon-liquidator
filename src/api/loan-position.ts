@@ -1,15 +1,18 @@
 import { getAddress, PublicClient } from 'viem'
 
 import { LoanPosition } from '../model/loan-position'
-import { getBuiltGraphSDK } from '../../.graphclient'
+import { getBuiltGraphSDK, getLoanPositionsQuery } from '../../.graphclient'
 import { Asset } from '../model/asset'
 import { calculateCurrentLTV, calculateIsOverLTVThreshold } from '../utils/ltv'
 import { fetchPrices } from '../utils/price'
 import { BigDecimal, dollarValue } from '../utils/numbers'
 
 import { fetchCurrencies, toCurrency } from './asset'
+import { fetchPositionStatus } from './position-status'
 
 const { getLoanPositions } = getBuiltGraphSDK()
+
+const PAGE_SIZE = 1000
 
 export async function fetchLoanPositions(
   publicClient: PublicClient,
@@ -19,18 +22,27 @@ export async function fetchLoanPositions(
   prices: { [address: `0x${string}`]: BigDecimal }
 }> {
   const currencies = fetchCurrencies(assets)
-  const [{ loanPositions }, prices] = await Promise.all([
-    getLoanPositions(
-      {},
-      {
-        url: process.env.SUBGRAPH_URL,
-      },
-    ),
+  const [{ totalLoanPositionCount }, prices] = await Promise.all([
+    fetchPositionStatus(),
     fetchPrices(
       publicClient,
       currencies.map((currency) => currency.address),
     ),
   ])
+  const loanPositions = (
+    await Promise.all(
+      Array.from({ length: Math.ceil(totalLoanPositionCount / PAGE_SIZE) }).map(
+        (_, index) =>
+          getLoanPositions({
+            skip: index * PAGE_SIZE,
+          }),
+      ),
+    )
+  ).reduce(
+    (acc, { loanPositions }) =>
+      acc.concat(...loanPositions.map((loanPosition) => loanPosition)),
+    [] as getLoanPositionsQuery['loanPositions'],
+  )
 
   return {
     prices,
